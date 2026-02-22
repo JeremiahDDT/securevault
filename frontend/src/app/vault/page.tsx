@@ -31,8 +31,8 @@ export default function VaultPage() {
     try {
       const { data } = await vaultApi.getEntries();
       setEntries(data.entries);
-    } catch {
-      router.push("/login");
+    } catch (err: any) {
+    console.error("Vault fetch error:", err);
     } finally {
       setLoading(false);
     }
