@@ -10,11 +10,30 @@
 
 ---
 
+## 📸 Screenshots
+
+<table>
+  <tr>
+    <td><img src="docs/Screenshot_2026-02-22_075119.png" alt="Login Page" width="400"/><br/><sub><b>Login Page</b></sub></td>
+    <td><img src="docs/Screenshot_2026-02-22_075245.png" alt="Register Page" width="400"/><br/><sub><b>Register — enforces strong password policy</b></sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/Screenshot_2026-02-22_082703.png" alt="Empty Vault" width="400"/><br/><sub><b>Empty Vault Dashboard</b></sub></td>
+    <td><img src="docs/Screenshot_2026-02-22_082907.png" alt="Vault with Entries" width="400"/><br/><sub><b>Vault with Encrypted Entries</b></sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/Screenshot_2026-02-22_083032.png" alt="Create Entry Modal" width="400"/><br/><sub><b>Create Entry — AES-256-GCM encrypted before storage</b></sub></td>
+    <td></td>
+  </tr>
+</table>
+
+---
+
 ## 📌 Overview
 
 SecureVault is a secure, full-stack credential and notes manager designed with security as a first-class concern — not an afterthought. Every design decision maps directly to a real-world security principle.
 
-Users can store sensitive notes and credentials in an encrypted personal vault. All data is encrypted at rest using AES-256, authentication uses JWT with refresh token rotation, and the app actively checks if stored passwords have appeared in known data breaches.
+Users can store sensitive notes and credentials in an encrypted personal vault. All data is encrypted at rest using AES-256-GCM, authentication uses JWT with refresh token rotation, and the app actively checks if stored passwords have appeared in known data breaches using the k-anonymity model.
 
 **This project was built to demonstrate the intersection of full stack development and applied cybersecurity.**
 
@@ -54,7 +73,7 @@ Users can store sensitive notes and credentials in an encrypted personal vault. 
 | OWASP Risk | Mitigation Implemented |
 |---|---|
 | A01 - Broken Access Control | JWT auth on all routes, user-scoped data queries |
-| A02 - Cryptographic Failures | AES-256 encryption at rest, bcrypt for passwords |
+| A02 - Cryptographic Failures | AES-256-GCM encryption at rest, bcrypt for passwords |
 | A03 - Injection | Parameterized queries, input sanitization via express-validator |
 | A05 - Security Misconfiguration | Helmet.js, strict CORS, env-based secrets |
 | A07 - Auth & Identification Failures | Refresh token rotation, rate limiting on auth routes |
@@ -76,7 +95,7 @@ Users can store sensitive notes and credentials in an encrypted personal vault. 
 |---|---|---|
 | Frontend | Next.js 14, React, TailwindCSS | UI, SSR, routing |
 | Primary API | Node.js, Express.js | REST API, auth, business logic |
-| Security Service | Python 3.11, FastAPI | Encryption, breach detection |
+| Security Service | Python 3.11+, FastAPI | Encryption, breach detection |
 | Database | PostgreSQL | Persistent storage |
 | Auth | JWT (access + refresh tokens) | Stateless authentication |
 | Password Hashing | bcrypt (cost 12) | Secure credential storage |
@@ -93,7 +112,7 @@ Users can store sensitive notes and credentials in an encrypted personal vault. 
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/YOUR_USERNAME/securevault.git
+git clone https://github.com/JeremiahDDT/securevault.git
 cd securevault
 ```
 
@@ -101,21 +120,21 @@ cd securevault
 
 **Backend** (`backend/.env`):
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/securevault
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/securevault
 JWT_ACCESS_SECRET=your-super-secret-access-key-min-32-chars
 JWT_REFRESH_SECRET=your-super-secret-refresh-key-min-32-chars
 JWT_ACCESS_EXPIRES=15m
 JWT_REFRESH_EXPIRES=7d
-SECURITY_SERVICE_URL=http://localhost:8000
+SECURITY_SERVICE_URL=http://localhost:8001
 PORT=3001
 NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
 ```
 
 **Security Service** (`security-service/.env`):
 ```env
 VAULT_ENCRYPTION_KEY=your-32-byte-hex-encryption-key
-HIBP_API_KEY=optional-haveibeenpwned-api-key
-PORT=8000
+PORT=8001
 ```
 
 **Frontend** (`frontend/.env.local`):
@@ -123,34 +142,35 @@ PORT=8000
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
-### 3. Database setup
+### 3. Set up the database
 ```bash
-cd backend
-npm install
-npm run db:migrate
+psql -U postgres
+CREATE DATABASE securevault;
+\c securevault
+```
+Then run the schema from `backend/src/config/schema.sql`
+
+### 4. Start all services
+
+**Option A — Automated (Windows):**
+```bash
+.\start-all.bat
 ```
 
-### 4. Start the backend
+**Option B — Manual (three separate terminals):**
 ```bash
-cd backend
-npm run dev
+# Terminal 1 - Frontend
+cd frontend && npm install && npm run dev
+
+# Terminal 2 - Backend
+cd backend && npm install && node src/index.js
+
+# Terminal 3 - Security Service
+cd security-service && pip install -r requirements.txt
+python -m uvicorn main:app --port 8001
 ```
 
-### 5. Start the security microservice
-```bash
-cd security-service
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
-
-### 6. Start the frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-App will be available at `http://localhost:3000`
+App runs at **http://localhost:3000**
 
 ---
 
@@ -160,28 +180,24 @@ App will be available at `http://localhost:3000`
 securevault/
 ├── frontend/                  # Next.js 14 application
 │   └── src/
-│       ├── app/               # App router pages
+│       ├── app/               # Login, Register, Vault pages
 │       ├── components/        # React components
-│       │   ├── auth/          # Login, Register forms
-│       │   └── vault/         # Vault CRUD UI
-│       ├── hooks/             # Custom React hooks
-│       └── lib/               # API client, utilities
+│       └── lib/               # API client with token refresh
 │
 ├── backend/                   # Node.js/Express API
 │   └── src/
-│       ├── routes/            # API route definitions
-│       ├── middleware/         # Auth, rate limit, validation
+│       ├── routes/            # Auth & vault endpoints
+│       ├── middleware/        # JWT auth, rate limiting
 │       ├── controllers/       # Business logic
-│       ├── models/            # Database models
-│       └── utils/             # JWT, helpers
+│       └── config/            # Database & schema
 │
 ├── security-service/          # Python/FastAPI microservice
-│   ├── routers/               # Encrypt, audit endpoints
-│   ├── services/              # AES-256, HIBP integration
-│   └── models/                # Pydantic schemas
+│   ├── routers/               # Encrypt, breach, audit endpoints
+│   └── services/              # AES-256-GCM, HIBP integration
 │
-├── .github/workflows/         # CI/CD pipeline
-├── SECURITY.md                # Security policy & threat model
+├── docs/                      # Screenshots
+├── start-all.bat              # One-command startup (Windows)
+├── SECURITY.md                # Threat model & security architecture
 └── docker-compose.yml         # Local dev environment
 ```
 
@@ -189,7 +205,7 @@ securevault/
 
 ## 🔑 API Reference
 
-### Auth Endpoints (Node.js/Express)
+### Auth Endpoints
 | Method | Route | Description |
 |---|---|---|
 | POST | `/api/auth/register` | Create account (bcrypt hashed) |
@@ -197,7 +213,7 @@ securevault/
 | POST | `/api/auth/refresh` | Rotate refresh token |
 | POST | `/api/auth/logout` | Invalidate refresh token |
 
-### Vault Endpoints (Node.js/Express)
+### Vault Endpoints
 | Method | Route | Description |
 |---|---|---|
 | GET | `/api/vault` | List user's vault entries |
@@ -205,41 +221,13 @@ securevault/
 | PUT | `/api/vault/:id` | Update entry |
 | DELETE | `/api/vault/:id` | Delete entry |
 
-### Security Endpoints (Python/FastAPI)
+### Security Service Endpoints
 | Method | Route | Description |
 |---|---|---|
 | POST | `/encrypt` | AES-256-GCM encrypt payload |
 | POST | `/decrypt` | Decrypt vault entry |
 | GET | `/breach-check` | k-anon HIBP password check |
-| GET | `/audit/{user_id}` | Generate security audit report |
-
----
-
-## 🧪 Running Tests
-
-```bash
-# Backend tests
-cd backend && npm test
-
-# Security service tests  
-cd security-service && pytest
-
-# Frontend tests
-cd frontend && npm test
-```
-
----
-
-## 🚢 Deployment
-
-The app is configured for deployment on **Railway** or **Render**:
-
-1. Push to GitHub
-2. Connect Railway/Render to your repo
-3. Set environment variables in the dashboard
-4. Deploy — the `Procfile` and `railway.toml` handle the rest
-
-CI/CD via GitHub Actions automatically runs tests on every push.
+| POST | `/audit` | Generate security audit report |
 
 ---
 
