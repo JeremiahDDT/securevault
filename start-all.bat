@@ -1,0 +1,13 @@
+@echo off
+echo Starting SecureVault...
+
+echo Starting Frontend...
+start cmd /k "cd /d C:\Users\darth\OneDrive\Desktop\securevault\frontend && npm run dev"
+
+echo Starting Backend...
+start cmd /k "cd /d C:\Users\darth\OneDrive\Desktop\securevault\backend && npm run dev"
+
+echo Starting Security Service...
+start cmd /k "cd /d C:\Users\darth\OneDrive\Desktop\securevault\security-service && start.bat"
+
+echo All services started!
