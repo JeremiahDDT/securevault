@@ -14,15 +14,15 @@
 
 <table>
   <tr>
-    <td><img src="docs/Screenshot_2026-02-22_075119.png" alt="Login Page" width="400"/><br/><sub><b>Login Page</b></sub></td>
-    <td><img src="docs/Screenshot_2026-02-22_075245.png" alt="Register Page" width="400"/><br/><sub><b>Register — enforces strong password policy</b></sub></td>
+    <td><img src="docs/login.png" alt="Login Page" width="400"/><br/><sub><b>Login Page</b></sub></td>
+    <td><img src="docs/login-create.png" alt="Register Page" width="400"/><br/><sub><b>Register — enforces strong password policy</b></sub></td>
   </tr>
   <tr>
-    <td><img src="docs/Screenshot_2026-02-22_082703.png" alt="Empty Vault" width="400"/><br/><sub><b>Empty Vault Dashboard</b></sub></td>
-    <td><img src="docs/Screenshot_2026-02-22_082907.png" alt="Vault with Entries" width="400"/><br/><sub><b>Vault with Encrypted Entries</b></sub></td>
+    <td><img src="docs/entries-none.png" alt="Empty Vault" width="400"/><br/><sub><b>Empty Vault Dashboard</b></sub></td>
+    <td><img src="docs/entries.png" alt="Vault with Entries" width="400"/><br/><sub><b>Vault with Encrypted Entries</b></sub></td>
   </tr>
   <tr>
-    <td><img src="docs/Screenshot_2026-02-22_083032.png" alt="Create Entry Modal" width="400"/><br/><sub><b>Create Entry — AES-256-GCM encrypted before storage</b></sub></td>
+    <td><img src="docs/entries-create.png" alt="Create Entry Modal" width="400"/><br/><sub><b>Create Entry — AES-256-GCM encrypted before storage</b></sub></td>
     <td></td>
   </tr>
 </table>
@@ -133,7 +133,7 @@ FRONTEND_URL=http://localhost:3000
 
 **Security Service** (`security-service/.env`):
 ```env
-VAULT_ENCRYPTION_KEY=your-32-byte-hex-encryption-key
+VAULT_ENCRYPTION_KEY=your-64-char-hex-encryption-key
 PORT=8001
 ```
 
