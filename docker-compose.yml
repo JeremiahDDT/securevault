@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: securevault
+      POSTGRES_PASSWORD: localdevpassword
+      POSTGRES_DB: securevault
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/config/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U securevault"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://securevault:localdevpassword@postgres:5432/securevault
+      JWT_ACCESS_SECRET: dev-access-secret-replace-in-production-minimum-32-chars
+      JWT_REFRESH_SECRET: dev-refresh-secret-replace-in-production-minimum-32-chars
+      SECURITY_SERVICE_URL: http://security-service:8000
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  security-service:
+    build: ./security-service
+    ports:
+      - "8000:8000"
+    environment:
+      VAULT_ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+    volumes:
+      - ./security-service:/app
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  postgres_data:
